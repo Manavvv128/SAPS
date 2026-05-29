@@ -20,6 +20,8 @@ npm run dev
 
 Then open `http://127.0.0.1:4200`.
 
+Student login currently redirects to the React student dashboard. The demo data is in `src/data/students.js`; add another email key there to show different data for a different student.
+
 ## Suggested Screens
 
 - Login

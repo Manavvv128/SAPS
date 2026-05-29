@@ -1,17 +1,22 @@
 # auth/service.py
-import hashlib
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, Any
 from jose import jwt
 from fastapi import HTTPException
+from passlib.context import CryptContext
 
 import database
 from config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE
 from auth.repository import create_user, get_user_by_email
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 def _hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    return pwd_context.hash(password)
+
+def _verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
 
 def register_user(name: str, email: str, password: str, role: str) -> Dict[str, Any]:
     if get_user_by_email(email):
@@ -25,7 +30,6 @@ def register_user(name: str, email: str, password: str, role: str) -> Dict[str, 
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     create_user(user)
-    # If student, create profile stub
     if role == "student":
         database.student_profiles[user["user_id"]] = {
             "user_id": user["user_id"],
@@ -36,7 +40,7 @@ def register_user(name: str, email: str, password: str, role: str) -> Dict[str, 
 
 def login_user(email: str, password: str) -> Dict[str, Any]:
     user = get_user_by_email(email)
-    if not user or user["password_hash"] != _hash_password(password):
+    if not user or not _verify_password(password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     now = datetime.now(timezone.utc)
     payload = {

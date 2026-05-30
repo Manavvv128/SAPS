@@ -35,7 +35,13 @@ def register_user(name: str, email: str, password: str, role: str) -> Dict[str, 
             "user_id": user["user_id"],
             "name": name,
             "email": email,
-    })
+        })
+    elif role == "teacher":
+        database.teacher_profiles.insert_one({
+            "user_id": user["user_id"],
+            "name": name,
+            "email": email,
+        })
     return {"message": "User registered successfully", "user_id": user["user_id"]}
 
 def login_user(email: str, password: str) -> Dict[str, Any]:

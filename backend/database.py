@@ -8,8 +8,8 @@ DB_NAME = os.environ.get("DB_NAME", "saps")
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
-# Collections — these replace the old in-memory dicts/lists
 users = db["users"]
 student_profiles = db["student_profiles"]
+teacher_profiles = db["teacher_profiles"]
 academic_records = db["academic_records"]
 predictions = db["predictions"]

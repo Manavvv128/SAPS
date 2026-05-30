@@ -16,6 +16,8 @@ class RegisterRequest(BaseModel):
             raise ValueError("Password must contain at least one uppercase letter")
         if not any(c.isdigit() for c in v):
             raise ValueError("Password must contain at least one number")
+        if not any(c in "!@#$%^&*()_+-=[]{}|;':\",./<>?" for c in v):
+            raise ValueError("Password must contain at least one special character")
         return v
 
 class LoginRequest(BaseModel):

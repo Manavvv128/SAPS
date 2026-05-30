@@ -5,10 +5,10 @@ scikit-learn==1.8.0
 numpy==2.4.6
 httpx==0.28.1
 pytest==9.0.3
-passlib[bcrypt]
-pydantic[email]
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+pydantic[email]==2.11.4
 pymongo==4.17.0
+python-dotenv==1.1.0
 slowapi==0.1.9
-
-
 

@@ -1,14 +1,24 @@
 # app.py
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from auth.router import router as auth_router
 from teacher.router import router as teacher_router
 from student.router import router as student_router
+from prediction.engine import prediction_engine
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup — train model before accepting requests
+    prediction_engine.train()
+    yield
+    # Shutdown — nothing to clean up for now
 
 app = FastAPI(
     title="Student Academic Prediction System",
     description="Backend API for SAPS — predicts student academic performance using marks and attendance.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.include_router(auth_router)

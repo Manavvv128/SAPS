@@ -75,7 +75,4 @@ class PredictionEngine:
         confidence = float(max(proba))
         return {"label": label, "confidence": round(confidence, 4), "version": self.MODEL_VERSION}
 
-
-# Singleton — trained once on import, reused for all requests
 prediction_engine = PredictionEngine()
-prediction_engine.train()

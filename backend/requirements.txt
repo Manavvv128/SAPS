@@ -8,7 +8,7 @@ pytest==9.0.3
 passlib[bcrypt]
 pydantic[email]
 pymongo==4.17.0
-
+slowapi==0.1.9
 
 
 

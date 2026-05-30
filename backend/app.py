@@ -2,6 +2,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from limiter import limiter
 from auth.router import router as auth_router
 from teacher.router import router as teacher_router
 from student.router import router as student_router
@@ -9,10 +12,8 @@ from prediction.engine import prediction_engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup — train model before accepting requests
     prediction_engine.train()
     yield
-    # Shutdown — nothing to clean up for now
 
 app = FastAPI(
     title="Student Academic Prediction System",
@@ -20,6 +21,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth_router)
 app.include_router(teacher_router)

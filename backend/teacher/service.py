@@ -11,17 +11,18 @@ def upload_marks(student_id: str, uploaded_by: str, term: str, marks: Dict[str, 
     if not database.student_profiles.find_one({"user_id": student_id}):
         raise HTTPException(status_code=404, detail="Student not found")
     record_id = save_marks(student_id, uploaded_by, term, marks)
+    if record_id is None:
+        raise HTTPException(status_code=403, detail="Access forbidden: another teacher owns this record")
     return {"message": "Marks uploaded successfully", "record_id": record_id}
 
-def upload_attendance(student_id: str, term: str, attendance_pct: float) -> Dict:
+def upload_attendance(student_id: str, uploaded_by: str, term: str, attendance_pct: float) -> Dict:
     if not database.student_profiles.find_one({"user_id": student_id}):
         raise HTTPException(status_code=404, detail="Student not found")
-    updated = update_attendance(student_id, term, attendance_pct)
-    if not updated:
-        raise HTTPException(
-            status_code=404,
-            detail="No marks record found for this term. Upload marks first."
-        )
+    result = update_attendance(student_id, term, attendance_pct, uploaded_by)
+    if result == "not_found":
+        raise HTTPException(status_code=404, detail="No marks record found for this term. Upload marks first.")
+    if result == "forbidden":
+        raise HTTPException(status_code=403, detail="Access forbidden: another teacher owns this record")
     return {"message": "Attendance updated successfully"}
 
 def trigger_prediction(student_id: str) -> PredictionResult:
@@ -56,7 +57,7 @@ def get_dashboard_stats() -> DashboardStats:
         if latest:
             students_with_preds += 1
             label_dist[latest.prediction_label] = label_dist.get(latest.prediction_label, 0) + 1
-        records = [r for r in database.academic_records if r["student_id"] == profile["user_id"]]
+        records = list(database.academic_records.find({"student_id": profile["user_id"]}))
         for r in records:
             if r["attendance_pct"]:
                 attendances.append(r["attendance_pct"])

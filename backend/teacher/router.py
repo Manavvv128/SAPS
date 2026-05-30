@@ -13,7 +13,7 @@ def post_marks(payload: MarksUpload, current_user: Dict = Depends(require_role("
 
 @router.post("/attendance")
 def post_attendance(payload: AttendanceUpload, current_user: Dict = Depends(require_role("teacher"))):
-    return upload_attendance(payload.student_id, payload.term, payload.attendance_pct)
+    return upload_attendance(payload.student_id, current_user["user_id"], payload.term, payload.attendance_pct)
 
 @router.post("/predict")
 def predict(student_id: str = Query(..., json_schema_extra={"example": "abc-123"}),

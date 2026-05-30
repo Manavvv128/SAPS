@@ -1,0 +1,14 @@
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+python-jose[cryptography]==3.5.0
+scikit-learn==1.8.0
+numpy==2.4.6
+httpx==0.28.1
+pytest==9.0.3
+passlib[bcrypt]
+pydantic[email]
+
+
+
+
+

@@ -1,6 +1,51 @@
 import React, { useMemo, useState } from "react";
 import { defaultStudentEmail, studentsByEmail } from "./data/students.js";
 
+const teacherProfile = {
+  name: "Prof. R. Sharma",
+  initials: "RS",
+  department: "CS Department",
+  semester: "Semester 4"
+};
+
+const initialTeacherStudents = [
+  {
+    user_id: "CS2024-047",
+    name: "Arjun Mehta",
+    marks: 74.2,
+    attendance: 88,
+    latest_prediction: "Good"
+  },
+  {
+    user_id: "CS2024-012",
+    name: "Priya Singh",
+    marks: 88.5,
+    attendance: 95,
+    latest_prediction: "Excellent"
+  },
+  {
+    user_id: "CS2024-031",
+    name: "Rohan Das",
+    marks: 51,
+    attendance: 62,
+    latest_prediction: "At Risk"
+  },
+  {
+    user_id: "CS2024-058",
+    name: "Neha Kapoor",
+    marks: 66.7,
+    attendance: 74,
+    latest_prediction: "Average"
+  },
+  {
+    user_id: "CS2024-003",
+    name: "Karan Iyer",
+    marks: 91.2,
+    attendance: 97,
+    latest_prediction: "Excellent"
+  }
+];
+
 function App() {
   const [page, setPage] = useState(() => localStorage.getItem("saps-page") || "login");
   const [studentEmail, setStudentEmail] = useState(
@@ -21,6 +66,11 @@ function App() {
     setPage("student");
   }
 
+  function handleTeacherLogin() {
+    localStorage.setItem("saps-page", "teacher");
+    setPage("teacher");
+  }
+
   function handleLogout() {
     localStorage.removeItem("saps-page");
     setPage("login");
@@ -30,10 +80,14 @@ function App() {
     return <StudentDashboard student={student} onLogout={handleLogout} />;
   }
 
-  return <LoginPage onStudentLogin={handleStudentLogin} />;
+  if (page === "teacher") {
+    return <TeacherDashboard teacher={teacherProfile} onLogout={handleLogout} />;
+  }
+
+  return <LoginPage onStudentLogin={handleStudentLogin} onTeacherLogin={handleTeacherLogin} />;
 }
 
-function LoginPage({ onStudentLogin }) {
+function LoginPage({ onStudentLogin, onTeacherLogin }) {
   const [role, setRole] = useState("student");
   const [email, setEmail] = useState(defaultStudentEmail);
 
@@ -45,7 +99,7 @@ function LoginPage({ onStudentLogin }) {
       return;
     }
 
-    alert("Teacher dashboard will be added next.");
+    onTeacherLogin();
   }
 
   return (
@@ -133,6 +187,197 @@ function LoginPage({ onStudentLogin }) {
             Don't have an account? <a href="/">Register here</a>
           </p>
         </form>
+      </section>
+    </main>
+  );
+}
+
+function TeacherDashboard({ teacher, onLogout }) {
+  const [students, setStudents] = useState(initialTeacherStudents);
+  const [query, setQuery] = useState("");
+  const [uploadName, setUploadName] = useState("");
+
+  const distribution = useMemo(
+    () =>
+      students.reduce(
+        (acc, student) => {
+          acc[student.latest_prediction] = (acc[student.latest_prediction] || 0) + 1;
+          return acc;
+        },
+        { Excellent: 0, Good: 0, Average: 0, "At Risk": 0 }
+      ),
+    [students]
+  );
+
+  const stats = useMemo(() => {
+    const total = Math.max(students.length, 60);
+    const marksTotal = students.reduce((sum, student) => sum + student.marks, 0);
+    const atRisk = students.filter((student) => student.latest_prediction === "At Risk").length;
+
+    return {
+      total,
+      predictionsRun: students.length,
+      pending: Math.max(total - students.length, 0),
+      average: marksTotal / students.length,
+      atRisk
+    };
+  }, [students]);
+
+  const filteredStudents = students.filter((student) => {
+    const needle = query.trim().toLowerCase();
+    return (
+      student.name.toLowerCase().includes(needle) ||
+      student.user_id.toLowerCase().includes(needle)
+    );
+  });
+
+  function handlePredict(studentId) {
+    setStudents((current) =>
+      current.map((student) =>
+        student.user_id === studentId
+          ? { ...student, latest_prediction: getPredictionFromScores(student.marks, student.attendance) }
+          : student
+      )
+    );
+  }
+
+  function handleExport() {
+    const csvRows = [
+      ["Student", "Roll Number", "Marks %", "Attendance %", "Prediction"],
+      ...students.map((student) => [
+        student.name,
+        student.user_id,
+        student.marks,
+        student.attendance,
+        student.latest_prediction
+      ])
+    ];
+    const csv = csvRows.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "saps-teacher-records.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleUpload(event) {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadName(file.name);
+    }
+  }
+
+  return (
+    <main className="dashboard-shell teacher-shell">
+      <header className="dashboard-topbar teacher-topbar">
+        <div className="topbar-brand">
+          <a href="/" onClick={onLogout}>
+            SAPS
+          </a>
+          <span>Teacher View</span>
+        </div>
+        <div className="topbar-user">
+          <span>{teacher.name}</span>
+          <button type="button" onClick={onLogout} aria-label="Sign out">
+            {teacher.initials}
+          </button>
+        </div>
+      </header>
+
+      <section className="dashboard-content teacher-content">
+        <div className="teacher-heading">
+          <div>
+            <h1>Class Overview</h1>
+            <p>
+              {teacher.department} <span>/</span> {teacher.semester} <span>/</span>{" "}
+              {stats.total} students enrolled
+            </p>
+          </div>
+          <div className="teacher-actions">
+            <button type="button" onClick={handleExport}>
+              Export CSV
+            </button>
+            <label>
+              <input type="file" accept=".csv,.xlsx" onChange={handleUpload} />
+              <span aria-hidden="true">+</span> Upload Data
+            </label>
+          </div>
+        </div>
+
+        <section className="stats-grid teacher-stats" aria-label="Teacher class summary">
+          <StatCard title="Total Students" value={stats.total} note="Enrolled this semester" />
+          <StatCard
+            title="Predictions Run"
+            value={stats.predictionsRun}
+            note={`${stats.pending} pending upload`}
+          />
+          <StatCard
+            title="Class Average"
+            value={`${stats.average.toFixed(1)}%`}
+            note="Across all subjects"
+          />
+          <StatCard title="At Risk" value={stats.atRisk} note="Below threshold" tone="danger" />
+        </section>
+
+        <section className="teacher-workspace">
+          <aside className="upload-panel" aria-label="Upload and prediction distribution">
+            <h2>Upload Student Data</h2>
+            <label className="drop-zone">
+              <input type="file" accept=".csv,.xlsx" onChange={handleUpload} />
+              <span aria-hidden="true">⇧</span>
+              <strong>Drop marks or attendance file</strong>
+              <small>{uploadName || "Accepts .xlsx · .csv · Max 5 MB"}</small>
+              <em>Browse files</em>
+            </label>
+
+            <h2>Prediction Distribution</h2>
+            <div className="distribution-list">
+              {Object.entries(distribution).map(([label, count]) => (
+                <DistributionRow key={label} label={label} count={count} />
+              ))}
+            </div>
+          </aside>
+
+          <section className="records-panel" aria-label="Student records">
+            <h2>Student Records</h2>
+            <div className="records-table">
+              <div className="search-row">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search by name or roll number..."
+                />
+              </div>
+
+              <div className="table-head">
+                <span>Student</span>
+                <span>Marks %</span>
+                <span>Attendance</span>
+                <span>Prediction</span>
+                <span className="sr-only">Action</span>
+              </div>
+
+              {filteredStudents.map((student) => (
+                <article className="student-record" key={student.user_id}>
+                  <div>
+                    <strong>{student.name}</strong>
+                    <small>{student.user_id}</small>
+                  </div>
+                  <span>{student.marks.toFixed(1)}%</span>
+                  <span>{student.attendance}%</span>
+                  <PredictionBadge label={student.latest_prediction} />
+                  <button type="button" onClick={() => handlePredict(student.user_id)}>
+                    Predict
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        </section>
       </section>
     </main>
   );
@@ -240,10 +485,41 @@ function StatCard({ title, value, note, tone }) {
   return (
     <article className="stat-card">
       <p>{title}</p>
-      <strong className={tone === "success" ? "success-text" : ""}>{value}</strong>
+      <strong
+        className={`${tone === "success" ? "success-text" : ""} ${
+          tone === "danger" ? "danger-text" : ""
+        }`}
+      >
+        {value}
+      </strong>
       <span>{note}</span>
     </article>
   );
+}
+
+function PredictionBadge({ label }) {
+  return <span className={`prediction-badge ${label.toLowerCase().replace(" ", "-")}`}>{label}</span>;
+}
+
+function DistributionRow({ label, count }) {
+  return (
+    <div className={`distribution-row ${label.toLowerCase().replace(" ", "-")}`}>
+      <span>{label}</span>
+      <div aria-hidden="true">
+        <span style={{ width: `${Math.max(count * 18, count ? 12 : 0)}%` }} />
+      </div>
+      <strong>{count}</strong>
+    </div>
+  );
+}
+
+function getPredictionFromScores(marks, attendance) {
+  const score = marks * 0.75 + attendance * 0.25;
+
+  if (score >= 85) return "Excellent";
+  if (score >= 70) return "Good";
+  if (score >= 60) return "Average";
+  return "At Risk";
 }
 
 function SubjectMark({ subject }) {

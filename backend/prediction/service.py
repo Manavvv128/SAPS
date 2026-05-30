@@ -8,6 +8,8 @@ import database
 from prediction.engine import prediction_engine
 from prediction.models import PredictionResult
 from prediction.repository import save_prediction, get_predictions_for_student, get_latest_prediction_for_student
+from logger import get_logger
+logger = get_logger("prediction")
 
 def _get_latest_record(student_id: str):
     records = list(database.academic_records.find({"student_id": student_id}))
@@ -35,6 +37,7 @@ def generate_prediction(student_id: str) -> PredictionResult:
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     save_prediction(prediction)
+    logger.info(f"Prediction generated: student_id={student_id} label={result['label']} confidence={result['confidence']} by model={result['version']}")
     return PredictionResult(**prediction)
 
 def get_latest_prediction(student_id: str) -> Optional[PredictionResult]:

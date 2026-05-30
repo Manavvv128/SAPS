@@ -7,6 +7,8 @@ from teacher.models import StudentSummary, DashboardStats
 from prediction.service import generate_prediction, get_latest_prediction
 from prediction.models import PredictionResult
 from collections import defaultdict
+from logger import get_logger
+logger = get_logger("teacher")
 
 def upload_marks(student_id: str, uploaded_by: str, term: str, marks: Dict[str, float]) -> Dict:
     if not database.student_profiles.find_one({"user_id": student_id}):
@@ -24,6 +26,7 @@ def upload_attendance(student_id: str, uploaded_by: str, term: str, attendance_p
         raise HTTPException(status_code=404, detail="No marks record found for this term. Upload marks first.")
     if result == "forbidden":
         raise HTTPException(status_code=403, detail="Access forbidden: another teacher owns this record")
+    logger.info(f"Attendance updated: student_id={student_id} term={term} attendance={attendance_pct}%")
     return {"message": "Attendance updated successfully"}
 
 def trigger_prediction(student_id: str) -> PredictionResult:

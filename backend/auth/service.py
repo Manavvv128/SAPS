@@ -9,6 +9,8 @@ from passlib.context import CryptContext
 import database
 from config import JWT_SECRET, JWT_ALGORITHM, ACCESS_TOKEN_EXPIRE
 from auth.repository import create_user, get_user_by_email
+from logger import get_logger
+logger = get_logger("auth")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -42,7 +44,9 @@ def register_user(name: str, email: str, password: str, role: str) -> Dict[str, 
             "name": name,
             "email": email,
         })
+    logger.info(f"New user registered: {email} role={role} user_id={user['user_id']}")
     return {"message": "User registered successfully", "user_id": user["user_id"]}
+
 
 def login_user(email: str, password: str) -> Dict[str, Any]:
     user = get_user_by_email(email)
@@ -56,4 +60,5 @@ def login_user(email: str, password: str) -> Dict[str, Any]:
         "exp": now + ACCESS_TOKEN_EXPIRE,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    logger.info(f"User logged in: {email} role={user['role']}")
     return {"access_token": token, "token_type": "bearer", "role": user["role"]}

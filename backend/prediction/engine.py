@@ -66,6 +66,8 @@ class PredictionEngine:
     def predict(self, marks: Dict[str, float], attendance_pct: float) -> Dict[str, Any]:
         if not self.model:
             raise RuntimeError("Model not trained. Call engine.train() first.")
+        if attendance_pct is None:
+            raise ValueError("Attendance not yet recorded for this student")
         avg_marks = float(np.mean(list(marks.values()))) if marks else 0.0
         features = np.array([[avg_marks, attendance_pct]])
         label = self.model.predict(features)[0]

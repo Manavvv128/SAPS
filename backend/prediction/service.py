@@ -21,6 +21,8 @@ def generate_prediction(student_id: str) -> PredictionResult:
     record = _get_latest_record(student_id)
     try:
         result = prediction_engine.predict(record["marks"], record["attendance_pct"])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception:
         raise HTTPException(status_code=503, detail="Prediction service unavailable")
     prediction = {

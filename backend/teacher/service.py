@@ -8,13 +8,13 @@ from prediction.service import generate_prediction, get_latest_prediction
 from prediction.models import PredictionResult
 
 def upload_marks(student_id: str, uploaded_by: str, term: str, marks: Dict[str, float]) -> Dict:
-    if student_id not in database.student_profiles:
+    if not database.student_profiles.find_one({"user_id": student_id}):
         raise HTTPException(status_code=404, detail="Student not found")
     record_id = save_marks(student_id, uploaded_by, term, marks)
     return {"message": "Marks uploaded successfully", "record_id": record_id}
 
 def upload_attendance(student_id: str, term: str, attendance_pct: float) -> Dict:
-    if student_id not in database.student_profiles:
+    if not database.student_profiles.find_one({"user_id": student_id}):
         raise HTTPException(status_code=404, detail="Student not found")
     updated = update_attendance(student_id, term, attendance_pct)
     if not updated:
@@ -25,7 +25,7 @@ def upload_attendance(student_id: str, term: str, attendance_pct: float) -> Dict
     return {"message": "Attendance updated successfully"}
 
 def trigger_prediction(student_id: str) -> PredictionResult:
-    if student_id not in database.student_profiles:
+    if not database.student_profiles.find_one({"user_id": student_id}):
         raise HTTPException(status_code=404, detail="Student not found")
     return generate_prediction(student_id)
 

@@ -1,19 +1,15 @@
 # database.py
-# In-memory store. Each "collection" is a plain Python dict or list.
-# To swap to MongoDB: replace only the repository.py files in each module.
-# This file stays untouched.
+from pymongo import MongoClient
+import os
 
-from typing import Dict, List, Any
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("DB_NAME", "saps")
 
-# keyed by email
-users: Dict[str, Dict[str, Any]] = {}
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
 
-# keyed by user_id
-student_profiles: Dict[str, Dict[str, Any]] = {}
-
-# list of records; each has student_id, uploaded_by, term, marks, attendance_pct, uploaded_at
-academic_records: List[Dict[str, Any]] = []
-
-# list of prediction results; each has student_id, academic_record_id, prediction_label,
-# confidence_score, model_version, generated_at
-predictions: List[Dict[str, Any]] = []
+# Collections — these replace the old in-memory dicts/lists
+users = db["users"]
+student_profiles = db["student_profiles"]
+academic_records = db["academic_records"]
+predictions = db["predictions"]

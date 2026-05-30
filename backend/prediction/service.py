@@ -10,10 +10,12 @@ from prediction.models import PredictionResult
 from prediction.repository import save_prediction, get_predictions_for_student, get_latest_prediction_for_student
 
 def _get_latest_record(student_id: str):
-    records = [r for r in database.academic_records if r["student_id"] == student_id]
+    records = list(database.academic_records.find({"student_id": student_id}))
     if not records:
         raise HTTPException(status_code=404, detail="No academic record found for this student")
-    return sorted(records, key=lambda r: r["uploaded_at"], reverse=True)[0]
+    record = sorted(records, key=lambda r: r["uploaded_at"], reverse=True)[0]
+    record.pop("_id", None)
+    return record
 
 def generate_prediction(student_id: str) -> PredictionResult:
     record = _get_latest_record(student_id)

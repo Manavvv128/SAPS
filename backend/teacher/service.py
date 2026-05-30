@@ -6,6 +6,7 @@ from teacher.repository import save_marks, update_attendance, get_all_student_pr
 from teacher.models import StudentSummary, DashboardStats
 from prediction.service import generate_prediction, get_latest_prediction
 from prediction.models import PredictionResult
+from collections import defaultdict
 
 def upload_marks(student_id: str, uploaded_by: str, term: str, marks: Dict[str, float]) -> Dict:
     if not database.student_profiles.find_one({"user_id": student_id}):
@@ -47,7 +48,8 @@ def get_all_students() -> List[StudentSummary]:
 def get_dashboard_stats() -> DashboardStats:
     profiles = get_all_student_profiles()
     total = len(profiles)
-    label_dist: Dict[str, int] = {"At Risk": 0, "Average": 0, "Good": 0, "Excellent": 0}
+    from collections import defaultdict
+    label_dist: Dict[str, int] = defaultdict(int)
     students_with_preds = 0
     attendances = []
     all_marks = []
@@ -56,7 +58,7 @@ def get_dashboard_stats() -> DashboardStats:
         latest = get_latest_prediction(profile["user_id"])
         if latest:
             students_with_preds += 1
-            label_dist[latest.prediction_label] = label_dist.get(latest.prediction_label, 0) + 1
+            label_dist[latest.prediction_label] += 1
         records = list(database.academic_records.find({"student_id": profile["user_id"]}))
         for r in records:
             if r["attendance_pct"]:

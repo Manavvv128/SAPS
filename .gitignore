@@ -1,10 +1,15 @@
-<<<<<<< HEAD
+# Python
 __pycache__/
 *.pyc
 venv/
+.pytest_cache/
+
+# Environment variables
 .env
+backend/.env
+
+# Frontend
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/*.log
-65b0636e4dc851982220576484954a3c4b3545e5
